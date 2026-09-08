@@ -243,7 +243,7 @@
   .store-category h3{font-size:15px;margin-bottom:5px;}
   .store-category .cat-meta{font-size:11.5px;color:var(--muted);margin-bottom:10px;}
   .stock-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0;}
-  .stock-mini{background:var(--blue-pale);border-radius:9px;padding:8px;text-align:center;}
+  .stock-mini{background:var(--blue-pale);border-radius:99px;padding:8px;text-align:center;}
   .stock-mini b{display:block;font-size:15px;color:var(--blue-deep);}
   .stock-mini span{font-size:10.5px;color:var(--muted);}
   .daily-menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:14px;}
@@ -302,11 +302,9 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDyreUJ7KTP0j0IzUaJpoX7IJf3vvypYAQ",
   authDomain: "lunch-program-bar.firebaseapp.com",
@@ -317,15 +315,8 @@ const firebaseConfig = {
   measurementId: "G-884DJ5JW9E"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-
-/* =========================================================
-   BARKALARE JUNIOR & PRIMARY SCHOOL — LUNCH PROGRAM SYSTEM
-   Single-file app. Data persists in this browser via localStorage.
-   Admin password required for any add / edit / remove action.
-   ========================================================= */
 
 const ADMIN_PASSWORD = "23456";
 const STORAGE_KEY = "barkalare_lunch_v2";
@@ -335,22 +326,21 @@ const GRADES = ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6","Gra
 let state = loadState();
 let currentView = "dashboard";
 let selectedDate = todayISO();
-let studentsTab = "list";   // list | grades | lunch | food
-let storeTab = "food";      // food | students
+let studentsTab = "list";
+let storeTab = "food";
 let weeklyDay = DAYS.includes(weekdayName(todayISO())) ? weekdayName(todayISO()) : "Monday";
-let pendingAdminAction = null; // function to run once admin logs in
+let pendingAdminAction = null;
 
-/* ---------------- persistence ---------------- */
 function defaultState(){
   return {
     admin:false,
-    teachers:[],   // {id,name,day,date}
-    entries:[],    // {id,teacherId,date,meal,items:[{name,qty,unit}],image}  — one own record per date
-    students:[],   // {id,name,gradeId,admissionNo,gender,allergies,fee,paid}
-    lunchList:[],  // {id,date,studentId} — the school's daily list, own record per date
-    storeCategories:[{id:"cat_general",name:"General Food"}], // {id,name} — admin can create food subfields/categories
-    storeItems:[], // {id,categoryId,name,unit,total}
-    storeLog:[]    // {id,date,type,itemName,categoryId,qty,unit,note} — own record per date
+    teachers:[],
+    entries:[],
+    students:[],
+    lunchList:[],
+    storeCategories:[{id:"cat_general",name:"General Food"}],
+    storeItems:[],
+    storeLog:[]
   };
 }
 function loadState(){
@@ -381,7 +371,6 @@ function fmtDate(iso){
 }
 function money(n){ return "KSh " + (Number(n)||0).toLocaleString(); }
 
-/* ---------------- toast ---------------- */
 let toastTimer;
 function toast(msg){
   const t = document.getElementById("toast");
@@ -391,7 +380,6 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove("show"),2200);
 }
 
-/* ---------------- admin gate ---------------- */
 function requireAdmin(action){
   if(state.admin){ action(); return; }
   pendingAdminAction = action;
@@ -413,7 +401,9 @@ function adminLoginModal(){
   };
 }
 window.submitAdminLogin = function submitAdminLogin(){
-  const val = document.getElementById("adminPwInput").value;
+  const input = document.getElementById("adminPwInput");
+  if(!input) return;
+  const val = input.value;
   if(val === ADMIN_PASSWORD){
     state.admin = true;
     closeModal();
@@ -422,7 +412,8 @@ window.submitAdminLogin = function submitAdminLogin(){
     if(pendingAdminAction){ const a=pendingAdminAction; pendingAdminAction=null; a(); }
     render();
   }else{
-    document.getElementById("adminPwError").style.display = "block";
+    const err = document.getElementById("adminPwError");
+    if(err) err.style.display = "block";
   }
 }
 function logoutAdmin(){
@@ -437,7 +428,6 @@ function renderSidebarAdmin(){
   btn.textContent = state.admin ? "Logout" : "Admin";
 }
 
-/* ---------------- modal helpers ---------------- */
 function openModal({title, body, actions, wide}){
   document.getElementById("modalBox").className = "modal" + (wide ? " wide":"");
   document.getElementById("modalBox").innerHTML = `
@@ -458,7 +448,6 @@ window.closeModal = function closeModal(){
   document.getElementById("modalOverlay").classList.remove("open");
 }
 
-/* ---------------- date handling ---------------- */
 function normalizeSelectedDate(){
   if(!selectedDate || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) selectedDate = todayISO();
 }
@@ -477,11 +466,21 @@ window.setSelectedDate = function setSelectedDate(v){
 function dateNavigatorHTML(){
   normalizeSelectedDate();
   return `<div class="date-control">
-    <button class="btn btn-outline btn-sm" onclick="shiftDate(-1)">← Previous</button>
-    <input type="date" value="${selectedDate}" onchange="setSelectedDate(this.value)" aria-label="Select date">
-    <button class="btn btn-soft btn-sm" onclick="setSelectedDate(todayISO())">Today</button>
-    <button class="btn btn-outline btn-sm" onclick="shiftDate(1)">Next →</button>
+    <button class="btn btn-outline btn-sm" id="btnShiftPrev">← Previous</button>
+    <input type="date" id="dateNavInput" value="${selectedDate}" aria-label="Select date">
+    <button class="btn btn-soft btn-sm" id="btnSetToday">Today</button>
+    <button class="btn btn-outline btn-sm" id="btnShiftNext">Next →</button>
   </div>`;
+}
+function wireDateNavigator(){
+  const prev = document.getElementById("btnShiftPrev");
+  if(prev) prev.onclick = () => window.shiftDate(-1);
+  const next = document.getElementById("btnShiftNext");
+  if(next) next.onclick = () => window.shiftDate(1);
+  const today = document.getElementById("btnSetToday");
+  if(today) today.onclick = () => window.setSelectedDate(todayISO());
+  const input = document.getElementById("dateNavInput");
+  if(input) input.onchange = (e) => window.setSelectedDate(e.target.value);
 }
 function nextDateForWeekday(targetWeekday, fromISO){
   let d = new Date((fromISO||todayISO())+"T00:00:00");
@@ -492,7 +491,6 @@ function nextDateForWeekday(targetWeekday, fromISO){
   return fromISO||todayISO();
 }
 
-/* ---------------- navigation ---------------- */
 const VIEW_ORDER = ["dashboard","teachers","weekly","students","payments","store"];
 const VIEW_META = {
   dashboard:{title:"Dashboard", sub:"Overview for the selected date"},
@@ -523,18 +521,26 @@ window.goBack = function goBack(){
 }
 function navButtons(){
   return `<div class="nav-buttons">
-    <button class="btn btn-outline" onclick="goBack()">← Back</button>
-    <button class="btn btn-outline" onclick="goNext()">Next →</button>
+    <button class="btn btn-outline" id="btnNavBack">← Back</button>
+    <button class="btn btn-outline" id="btnNavNext">Next →</button>
   </div>`;
 }
+function wireNavButtons(){
+  const back = document.getElementById("btnNavBack");
+  if(back) back.onclick = window.goBack;
+  const next = document.getElementById("btnNavNext");
+  if(next) next.onclick = window.goNext;
+}
 
-/* ================= RENDER ROOT ================= */
 function render(){
   normalizeSelectedDate();
   const chip = document.getElementById("todayChip");
   if(chip) chip.textContent = weekdayName(selectedDate) + " · " + fmtDate(selectedDate);
   const navWrap = document.getElementById("dateNavWrap");
-  if(navWrap) navWrap.innerHTML = dateNavigatorHTML();
+  if(navWrap) {
+    navWrap.innerHTML = dateNavigatorHTML();
+    wireDateNavigator();
+  }
   const main = document.getElementById("mainContent");
   if(currentView === "dashboard") main.innerHTML = renderDashboard();
   else if(currentView === "teachers") main.innerHTML = renderTeachers();
@@ -542,10 +548,47 @@ function render(){
   else if(currentView === "students") main.innerHTML = renderStudents();
   else if(currentView === "payments") main.innerHTML = renderPayments();
   else if(currentView === "store") main.innerHTML = renderStore();
+  
+  wireNavButtons();
+  wireDynamicButtons();
   saveState();
 }
 
-/* ================= DASHBOARD ================= */
+function wireDynamicButtons(){
+  const openWeeklyBtn = document.getElementById("openWeeklyBtn");
+  if(openWeeklyBtn) openWeeklyBtn.onclick = () => window.goTo('weekly');
+
+  const downloadDataBtn = document.getElementById("downloadDataBtn");
+  if(downloadDataBtn) downloadDataBtn.onclick = () => requireAdmin(()=>openExportModal());
+
+  const addTeacherBtn = document.getElementById("addTeacherBtn");
+  if(addTeacherBtn) addTeacherBtn.onclick = () => requireAdmin(()=>openTeacherModal());
+
+  const addMealEntryBtn = document.getElementById("addMealEntryBtn");
+  if(addMealEntryBtn) addMealEntryBtn.onclick = () => requireAdmin(()=>openEntryModal());
+
+  const addStudentBtn = document.getElementById("addStudentBtn");
+  if(addStudentBtn) addStudentBtn.onclick = () => requireAdmin(()=>openStudentModal());
+
+  const addLunchBtn = document.getElementById("addLunchBtn");
+  if(addLunchBtn) addLunchBtn.onclick = () => requireAdmin(()=>window.addToLunch());
+
+  const manageLunchBtn = document.getElementById("manageLunchBtn");
+  if(manageLunchBtn) manageLunchBtn.onclick = () => window.setStudentsTab('lunch');
+
+  const addCategoryBtn = document.getElementById("addCategoryBtn");
+  if(addCategoryBtn) addCategoryBtn.onclick = () => requireAdmin(()=>openCategoryModal());
+
+  const addStockBtn = document.getElementById("addStockBtn");
+  if(addStockBtn) addStockBtn.onclick = () => requireAdmin(()=>openStockModal('add'));
+
+  const useStockBtn = document.getElementById("useStockBtn");
+  if(useStockBtn) useStockBtn.onclick = () => requireAdmin(()=>openStockModal('remove'));
+
+  const manageStudentsBtn = document.getElementById("manageStudentsBtn");
+  if(manageStudentsBtn) manageStudentsBtn.onclick = () => window.goTo('students');
+}
+
 function renderDashboard(){
   const date = selectedDate;
   const weekday = weekdayName(date);
@@ -571,7 +614,7 @@ function renderDashboard(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>Cooking — ${weekday}</h2><div class="desc">${fmtDate(date)} · this date has its own complete record</div></div>
-        <button class="btn btn-soft" onclick="goTo('weekly')">Open ${weekday}'s page →</button>
+        <button class="btn btn-soft" id="openWeeklyBtn">Open ${weekday}'s page →</button>
       </div>
       ${ todaysTeacher ? `
         <p style="font-size:14px;">On duty: <strong>${escapeHtml(todaysTeacher.name)}</strong></p>
@@ -584,7 +627,7 @@ function renderDashboard(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>Admin data downloads</h2><div class="desc">Choose exactly the records you want and download them as Word or PDF.</div></div>
-        <button class="btn btn-primary" onclick="requireAdmin(()=>openExportModal())">⬇ Download data</button>
+        <button class="btn btn-primary" id="downloadDataBtn">⬇ Download data</button>
       </div>
     </div>
 
@@ -592,7 +635,6 @@ function renderDashboard(){
   `;
 }
 
-/* ================= TEACHERS ================= */
 function renderTeachers(){
   const rows = state.teachers.map(t=>`
     <tr>
@@ -620,7 +662,7 @@ function renderTeachers(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>Cooking roster</h2><div class="desc">Each teacher is assigned a day of the week, with an optional specific date</div></div>
-        <button class="btn btn-primary" onclick="requireAdmin(()=>openTeacherModal())">+ Add teacher</button>
+        <button class="btn btn-primary" id="addTeacherBtn">+ Add teacher</button>
       </div>
       <table>
         <thead><tr><th>Day</th><th>Teacher</th><th>Date</th><th style="text-align:right;">Actions</th></tr></thead>
@@ -631,7 +673,7 @@ function renderTeachers(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>Record a meal</h2><div class="desc">Selected date: <strong>${fmtDate(selectedDate)}</strong>. What was prepared and brought, saved against this date only.</div></div>
-        <button class="btn btn-primary" onclick="requireAdmin(()=>openEntryModal())" ${state.teachers.length? '' : 'disabled'}>+ Add meal entry</button>
+        <button class="btn btn-primary" id="addMealEntryBtn" ${state.teachers.length? '' : 'disabled'}>+ Add meal entry</button>
       </div>
       ${ state.teachers.length ? "" : `<p style="color:var(--muted);font-size:13px;">Add at least one teacher first.</p>` }
       <p class="date-note">Use the date navigator at the top of the page to move to another date — new records are saved against whichever date is selected and never overwrite another date's record.</p>
@@ -686,16 +728,18 @@ function openTeacherModal(existing){
       <button class="btn btn-primary" id="saveTeacherBtn">Save</button>
     `
   });
-  document.getElementById("saveTeacherBtn").onclick = () => saveTeacher(t.id||'');
+  const saveBtn = document.getElementById("saveTeacherBtn");
+  if(saveBtn) saveBtn.onclick = () => saveTeacher(t.id||'');
 }
 function saveTeacher(id){
-  const name = document.getElementById("tName").value.trim();
+  const nameInput = document.getElementById("tName");
+  const name = nameInput ? nameInput.value.trim() : "";
   const day = document.getElementById("tDay").value;
   const date = document.getElementById("tDate").value || selectedDate;
   if(!name){ toast("Please enter the teacher's name"); return; }
   if(id){
     const t = state.teachers.find(x=>x.id===id);
-    t.name=name; t.day=day; t.date=date;
+    if(t){ t.name=name; t.day=day; t.date=date; }
     toast("Teacher updated");
   }else{
     state.teachers.push({id:uid(), name, day, date});
@@ -743,8 +787,10 @@ function openEntryModal(){
     `
   });
   addIngredientRow();
-  document.getElementById("addIngRowBtn").onclick = addIngredientRow;
-  document.getElementById("saveEntryBtn").onclick = saveEntry;
+  const addBtn = document.getElementById("addIngRowBtn");
+  if(addBtn) addBtn.onclick = addIngredientRow;
+  const saveBtn = document.getElementById("saveEntryBtn");
+  if(saveBtn) saveBtn.onclick = saveEntry;
 }
 function openEntryModalForDate(date){
   const prev = selectedDate;
@@ -754,6 +800,7 @@ function openEntryModalForDate(date){
 }
 function addIngredientRow(){
   const wrap = document.getElementById("ingredientRows");
+  if(!wrap) return;
   const id = "row_"+uid();
   const div = document.createElement("div");
   div.className="ingredient-row";
@@ -765,10 +812,12 @@ function addIngredientRow(){
     <button type="button" class="btn btn-sm btn-danger rm" id="rm_${id}">✕</button>
   `;
   wrap.appendChild(div);
-  document.getElementById(`rm_${id}`).onclick = () => document.getElementById(id).remove();
+  const rmBtn = document.getElementById(`rm_${id}`);
+  if(rmBtn) rmBtn.onclick = () => { const el = document.getElementById(id); if(el) el.remove(); };
 }
 function saveEntry(){
-  const teacherId = document.getElementById("eTeacher").value;
+  const teacherEl = document.getElementById("eTeacher");
+  const teacherId = teacherEl ? teacherEl.value : "";
   const date = document.getElementById("eDate").value || selectedDate;
   const meal = document.getElementById("eMeal").value.trim();
   if(!teacherId){ toast("Please add a teacher first"); return; }
@@ -794,7 +843,6 @@ window.removeEntry = function removeEntry(id){
   });
 }
 
-/* ---------------- meal picture generator ---------------- */
 window.generatePicture = function generatePicture(entryId){
   const entry = state.entries.find(e=>e.id===entryId);
   if(!entry) return;
@@ -912,7 +960,6 @@ window.downloadEntryImage = function downloadEntryImage(entryId){
   a.click();
 }
 
-/* ================= WEEKLY MENU ================= */
 function renderWeekly(){
   if(!DAYS.includes(weeklyDay)) weeklyDay = "Monday";
   const tabs = DAYS.map(d=>`<button class="inline-tab ${weeklyDay===d?'active':''}" onclick="setWeeklyDay('${d}')">${d}</button>`).join("");
@@ -951,7 +998,6 @@ function renderWeekly(){
 }
 window.setWeeklyDay = function setWeeklyDay(d){ weeklyDay = d; render(); }
 
-/* ================= STUDENTS ================= */
 function renderStudents(){
   return `
     ${!state.admin ? adminLockedNote() : ""}
@@ -1002,7 +1048,7 @@ function renderStudentList(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>All students</h2><div class="desc">Full characteristics per student — grade, admission number, gender — so no two students are confused.</div></div>
-        <button class="btn btn-primary" onclick="requireAdmin(()=>openStudentModal())">+ Add student</button>
+        <button class="btn btn-primary" id="addStudentBtn">+ Add student</button>
       </div>
       <table><thead><tr><th>Name</th><th>Grade</th><th>Admission No.</th><th>Gender</th><th>Lunch fee</th><th style="text-align:right;">Actions</th></tr></thead>
       <tbody>${rows}</tbody></table>
@@ -1046,10 +1092,12 @@ function openStudentModal(existing){
     actions:`<button class="btn btn-outline" id="closeModalBtn">Cancel</button>
              <button class="btn btn-primary" id="saveStudentBtn">Save</button>`
   });
-  document.getElementById("saveStudentBtn").onclick = () => saveStudent(st.id||'');
+  const saveBtn = document.getElementById("saveStudentBtn");
+  if(saveBtn) saveBtn.onclick = () => saveStudent(st.id||'');
 }
 function saveStudent(id){
-  const name = document.getElementById("stName").value.trim();
+  const nameEl = document.getElementById("stName");
+  const name = nameEl ? nameEl.value.trim() : "";
   const gradeId = document.getElementById("stGrade").value;
   const admissionNo = document.getElementById("stAdm").value.trim();
   const gender = document.getElementById("stGender").value;
@@ -1058,7 +1106,7 @@ function saveStudent(id){
   if(!name){ toast("Please enter the student's name"); return; }
   if(id){
     const st = state.students.find(x=>x.id===id);
-    st.name=name; st.gradeId=gradeId; st.admissionNo=admissionNo; st.gender=gender; st.fee=fee; st.allergies=allergies;
+    if(st){ st.name=name; st.gradeId=gradeId; st.admissionNo=admissionNo; st.gender=gender; st.fee=fee; st.allergies=allergies; }
     toast("Student updated");
   }else{
     state.students.push({id:uid(), name, gradeId, admissionNo, gender, allergies, fee, paid:0});
@@ -1107,7 +1155,7 @@ function renderDailyLunch(){
             ${availableStudents.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} — ${escapeHtml(s.gradeId||"—")}</option>`).join("")}
           </select>
         </div>
-        <button class="btn btn-primary" onclick="requireAdmin(()=>addToLunch())">+ Add student</button>
+        <button class="btn btn-primary" id="addLunchBtn">+ Add student</button>
       </div>
 
       <table><thead><tr><th>Student</th><th>Grade</th><th style="text-align:right;">Actions</th></tr></thead>
@@ -1117,7 +1165,7 @@ function renderDailyLunch(){
 }
 window.addToLunch = function addToLunch(){
   const sel = document.getElementById("addLunchStudent");
-  const studentId = sel.value;
+  const studentId = sel ? sel.value : "";
   if(!studentId){ toast("Please select a student"); return; }
   const exists = state.lunchList.some(l=>l.date===selectedDate && l.studentId===studentId);
   if(exists){ toast("Student is already on this date's list"); return; }
@@ -1170,13 +1218,12 @@ function renderDailyFood(){
 
     <div class="panel">
       <div class="panel-head"><div><h2>Daily student lunch list</h2><div class="desc">Students the school has placed on this date's list.</div></div>
-      <button class="btn btn-soft" onclick="setStudentsTab('lunch')">Manage lunch list →</button></div>
+      <button class="btn btn-soft" id="manageLunchBtn">Manage lunch list →</button></div>
       ${renderDailyLunch()}
     </div>
   `;
 }
 
-/* ================= PAYMENTS ================= */
 function renderPayments(){
   const rows = state.students.map(st=>{
     const balance = (Number(st.fee)||0) - (Number(st.paid)||0);
@@ -1207,6 +1254,7 @@ function renderPayments(){
 window.editPayment = function editPayment(id){
   requireAdmin(()=>{
     const st = state.students.find(s=>s.id===id);
+    if(!st) return;
     openModal({
       title:"Update payment — " + st.name,
       body:`
@@ -1218,18 +1266,19 @@ window.editPayment = function editPayment(id){
       actions:`<button class="btn btn-outline" id="closeModalBtn">Cancel</button>
                <button class="btn btn-primary" id="savePaymentBtn">Save</button>`
     });
-    document.getElementById("savePaymentBtn").onclick = () => savePayment(id);
+    const saveBtn = document.getElementById("savePaymentBtn");
+    if(saveBtn) saveBtn.onclick = () => savePayment(id);
   });
 }
 function savePayment(id){
   const st = state.students.find(s=>s.id===id);
+  if(!st) return;
   st.fee = Number(document.getElementById("pFee").value)||0;
   st.paid = Number(document.getElementById("pPaid").value)||0;
   toast("Payment updated");
   closeModal(); render();
 }
 
-/* ================= STORE ================= */
 function renderStore(){
   return `
     ${!state.admin ? adminLockedNote() : ""}
@@ -1288,7 +1337,7 @@ function renderStoreFood(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>Food Store Subfields</h2><div class="desc">Create separate food areas such as <strong>Maize</strong>, <strong>Beans</strong>, <strong>Cabbage</strong>, Rice, etc. Each subfield keeps its own items and remaining stock.</div></div>
-        <button class="btn btn-primary" onclick="requireAdmin(()=>openCategoryModal())">+ Add subfield</button>
+        <button class="btn btn-primary" id="addCategoryBtn">+ Add subfield</button>
       </div>
       ${categories.length ? `<div class="store-category-grid">${categoryCards}</div>` : `<p style="color:var(--muted);">No food subfields yet. Admin can add one.</p>`}
     </div>
@@ -1297,8 +1346,8 @@ function renderStoreFood(){
       <div class="panel-head">
         <div><h2>Date-based food stock records</h2><div class="desc">Every addition or use is attached to its exact date. The <strong>Remaining</strong> amount is maintained separately for each food item.</div></div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" onclick="requireAdmin(()=>openStockModal('add'))">+ Add stock</button>
-          <button class="btn btn-outline" onclick="requireAdmin(()=>openStockModal('remove'))">− Use stock</button>
+          <button class="btn btn-primary" id="addStockBtn">+ Add stock</button>
+          <button class="btn btn-outline" id="useStockBtn">− Use stock</button>
         </div>
       </div>
       <table><thead><tr><th>Date</th><th>Subfield</th><th>Food</th><th>Action</th><th>Quantity</th><th>Remaining</th><th>Note</th></tr></thead>
@@ -1319,14 +1368,16 @@ function openCategoryModal(existingId){
     actions:`<button class="btn btn-outline" id="closeModalBtn">Cancel</button>
              <button class="btn btn-primary" id="saveCategoryBtn">Save</button>`
   });
-  document.getElementById("saveCategoryBtn").onclick = () => saveCategory(existingId||'');
+  const saveBtn = document.getElementById("saveCategoryBtn");
+  if(saveBtn) saveBtn.onclick = () => saveCategory(existingId||'');
 }
 function saveCategory(id){
-  const name=document.getElementById("catName").value.trim();
+  const nameEl = document.getElementById("catName");
+  const name = nameEl ? nameEl.value.trim() : "";
   if(!name){toast("Enter a subfield name");return;}
   if(id){
     const c=state.storeCategories.find(x=>x.id===id);
-    if(c)c.name=name;
+    if(c) c.name=name;
     toast("Food subfield updated");
   }else{
     if(state.storeCategories.some(c=>c.name.toLowerCase()===name.toLowerCase())){toast("That subfield already exists");return;}
@@ -1381,7 +1432,8 @@ function openStockModal(type, categoryId){
     actions:`<button class="btn btn-outline" id="closeModalBtn">Cancel</button>
              <button class="btn btn-primary" id="saveStockBtn">Save</button>`
   });
-  document.getElementById("saveStockBtn").onclick = () => saveStock(type);
+  const saveBtn = document.getElementById("saveStockBtn");
+  if(saveBtn) saveBtn.onclick = () => saveStock(type);
 }
 function saveStock(type){
   const categoryId=document.getElementById("stockCategory").value;
@@ -1431,7 +1483,7 @@ function renderStoreStudents(){
     <div class="panel">
       <div class="panel-head">
         <div><h2>Student records</h2><div class="desc">This sub-file holds every student's full characteristics for reference — kept apart from the food store.</div></div>
-        <button class="btn btn-soft" onclick="goTo('students')">Manage students →</button>
+        <button class="btn btn-soft" id="manageStudentsBtn">Manage students →</button>
       </div>
       <table><thead><tr><th>Name</th><th>Grade</th><th>Admission No.</th><th>Gender</th><th>Allergies/Notes</th><th>Fee</th><th>Paid</th><th>Balance</th></tr></thead>
       <tbody>${rows}</tbody></table>
@@ -1439,7 +1491,6 @@ function renderStoreStudents(){
   `;
 }
 
-/* ---------------- admin export ---------------- */
 function openExportModal(){
   const d = selectedDate;
   openModal({
@@ -1466,8 +1517,10 @@ function openExportModal(){
       <button class="btn btn-soft" id="expWordBtn">📝 Word</button>
       <button class="btn btn-primary" id="expPdfBtn">📄 PDF</button>`
   });
-  document.getElementById("expWordBtn").onclick = () => exportSelectedData('word');
-  document.getElementById("expPdfBtn").onclick = () => exportSelectedData('pdf');
+  const wordBtn = document.getElementById("expWordBtn");
+  if(wordBtn) wordBtn.onclick = () => exportSelectedData('word');
+  const pdfBtn = document.getElementById("expPdfBtn");
+  if(pdfBtn) pdfBtn.onclick = () => exportSelectedData('pdf');
 }
 
 function getExportRows(){
@@ -1527,13 +1580,11 @@ function exportSelectedData(type){
   }
 }
 
-/* ---------------- utils ---------------- */
 function escapeHtml(str){
   return String(str??"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 }
 function escapeAttr(str){ return escapeHtml(str); }
 
-/* ---------------- wiring ---------------- */
 document.getElementById("adminBtn").addEventListener("click",()=>{
   if(state.admin) logoutAdmin();
   else openModal(adminLoginModal());
@@ -1548,7 +1599,6 @@ document.getElementById("modalOverlay").addEventListener("keydown", e=>{
   }
 });
 
-/* ---------------- boot ---------------- */
 renderSidebarAdmin();
 goTo("dashboard");
 </script>
